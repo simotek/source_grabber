@@ -1,0 +1,9 @@
+Notes 
+
+EFL
+* Needs Bullet
+* Needs Systemd Dev
+* Harfbuzz
+
+Version is now
+git rev-list --count HEAD

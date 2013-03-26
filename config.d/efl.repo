@@ -1,0 +1,75 @@
+#!/bin/bash
+# repository type
+REPO_TYPE=GIT
+
+SRC_URL=git://git.enlightenment.org/core/efl.git
+# where is/should be the repository stored locally
+SRC_DIR=/home/simon/src/source_grabber_build/efl-git/efl
+# FIXME: this should point to the proper place once built
+OBS_PRJ= home:simotek:branches:X11:Enlightenment:Nightly
+OBS_PRJ_DIR="$WORK_DIR/$OBS_PRJ"
+
+
+# packages in the repository
+# NOTE: this names should correspond with upstream names of tarballs so new_version will work easily
+# TODO: Make this work with one package per repo
+PACKAGES=(
+	efl
+)
+
+
+version_hook() {
+	git rev-list --count HEAD
+}
+
+new_version() {
+	# remove suffix
+	NEW_VERSION="${RESULT_TARBALL%.tar.bz2}"
+	# remove path (bash equivalent of basename), name etc.
+	NEW_VERSION="${NEW_VERSION##*/}"
+	# FIXME: this is just hack for now
+	if [ "$PKG" = econcentration ]; then
+		NEW_SVN_REVISION="$(git --git-dir="$SRC_DIR/.git" --work-tree="$SRC_DIR" log -n 1 "$SRC_DIR/$SRC_REL_DIR" | sed -n 's/.*trunk@\([0-9]\+\).*/\1/p')"
+		NEW_VERSION="${NEW_VERSION#*-}"
+		NEW_ALPHA="${NEW_VERSION}"
+		NEW_VERSION="${NEW_VERSION%-alpha}.$NEW_SVN_REVISION"
+		mv "$OBS_PRJ_DIR/$OBS_PKG/$RESULT_TARBALL" "$OBS_PRJ_DIR/$OBS_PKG/$PKG-$NEW_VERSION.tar.bz2"
+		local DIRTMP="$(mktemp -d)"
+		(
+			cd "$DIRTMP"
+			tar xjf "$OBS_PRJ_DIR/$OBS_PKG/$RESULT_TARBALL"
+			mv "$PKG"* "$PKG-$NEW_VERSION"
+			tar cjf "$OBS_PRJ_DIR/$OBS_PKG/$PKG-$NEW_VERSION.tar.bz2" "$PKG-$NEW_VERSION"
+			cd ..
+			rm -rf "$DIRTMP"
+		)
+	else
+		NEW_VERSION="${NEW_VERSION##*-}"
+	fi
+}
+
+pre_update_tarball_hook() {	
+	# I don't want to follow version dependencies just for making tarball
+	cp "configure.ac" "configure.ac.tmp"
+	sed 's@ \(>=\?\) [0-9.]*@ \1 0.0.0@g' configure.ac.tmp > configure.ac
+	# now do some e17 specific preparations
+	NOCONFIGURE=yes ./autogen.sh
+}
+
+post_configure_hook() {
+	# now restore original configure.ac for `make dist'
+	cp configure.ac.tmp configure.ac
+}
+
+update_source_repo() {
+	update_git
+}
+
+need_update() {
+	need_update_git
+}
+
+
+update_spec() {
+	update_spec_git
+}
