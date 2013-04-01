@@ -1,9 +1,10 @@
 Notes 
 
 EFL
-* Needs Bullet
-* Needs Systemd Dev
-* Harfbuzz
+* Nees to build Docs
+
+e_cho - Need to remove alpha
+
 
 Version is now
 git rev-list --count HEAD

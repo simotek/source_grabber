@@ -65,7 +65,7 @@ NONE="\033[00m"
 colorize() {
     local FIRST="$1"
     shift
-    echo -e "$SPACES${COLOR}$FIRST${NONE}$*"
+    echo -e "$SPACES    ${COLOR}$FIRST${NONE}$*"
 }
 
 inform() {
@@ -218,6 +218,7 @@ update_spec_git() {
 
 update_git() {
     NEW_REVISION="$(git --git-dir="$SRC_DIR/.git" log --format=oneline -n 1  | cut -d\  -f1)"
+
     if [ "$SKIP_UPDATE_SRC" -o "$SKIP_UPDATE" ]; then
         inform "  * Skipping update of GIT repository ${SKIP_UPDATE:+(SKIP_UPDATE)} ${SKIP_UPDATE_SRC:+(SKIP_UPDATE_SRC)}"
     else
@@ -325,6 +326,7 @@ new_version() {
     NEW_VERSION="${NEW_VERSION%.tar.gz}"
     # remove package name
     NEW_VERSION="${NEW_VERSION##$PKG-}"
+
 }
 
 find_result_tarball() {
@@ -333,8 +335,8 @@ find_result_tarball() {
     if [ $RES -ne 255 ]; then
         return "$RES"
     fi
-    echo "Searching In ${SRC_REL_DIR##*/}"
     RESULT_TARBALL="$(ls "${SRC_REL_DIR##*/}"*.tar.bz2 2>/dev/null)"
+
     local NUM="$(wc -l <<< "$RESULT_TARBALL")"
     case $NUM in
         1)
@@ -379,6 +381,10 @@ run_configure() {
         return "$RES"
     fi
     inform "      * running configure"
+    if ! report_on_error autoreconf -ifv; then
+        error "      * autoreconf -ifv failed"
+        return 1
+    fi
     if ! report_on_error ./configure; then
         error "      * ./configure failed"
         return 1
@@ -505,10 +511,11 @@ update_package() {
     fi
 
     inform "    * Updating spec file"
-    if ! new_version; then
-        error "      * Cannot recognize new version"
-        return 1
-    fi
+    new_version
+    #if ! new_version; then
+    #    error "      * Cannot recognize new version"
+    #    return 1
+    #fi
 
     inform "      * new version: " "$NEW_VERSION"
     if ! update_spec; then
@@ -728,10 +735,13 @@ update_project_package() {
 
         local OLD_PWD="$PWD"
 
-        cd $1
+        cd "$1"
         inform "Updating package from OBS"
         # old update command was to complex
-        report_on_error osc up
+        if ! report_on_error osc up; then
+            error "      * Cannot osc up"
+            return 1
+        fi
 
         cd $OLD_PWD
 
@@ -740,8 +750,17 @@ update_project_package() {
         inform "    * Checking if update is needed"
         inform "          * Pulling Latest Git Repository"
         # First need to pull git repo
-        git --git-dir="$SRC_DIR/.git" fetch origin
-        git --git-dir="$SRC_DIR/.git" reset --hard origin/master 
+        
+        
+        if ! report_on_error git --git-dir="$SRC_DIR/.git" fetch origin; then
+            error "      * Cannot fetch source"
+            return 1
+        fi
+        if ! report_on_error git --git-dir="$SRC_DIR/.git" reset --hard origin/master ; then
+            error "      * Cannot reset source"
+            return 1
+        fi
+        
         if ! need_update; then
             inform "      * Tarball is up to date, no update needed."
             return 0
