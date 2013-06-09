@@ -35,24 +35,6 @@
 #
 ################################################################################
 
-if [ -d "$HOME/.source_grabber" ]; then
-    CONF_PATH="$HOME/.source_grabber"
-else
-    CUR_PATH="${BASH_SOURCE[0]}"
-    CONF_PATH="${CUR_PATH%/*}"/config.d
-fi
-
-# read basic configuration
-if [ ! -f "$CONF_PATH/base.conf" ]; then
-    error "Basic configuration wasn't found."
-    #return 1
-else
-    source "$CONF_PATH/base.conf"
-fi
-
-# clear some session specific variables first
-unset SKIP_UPDATE SKIP_COMMIT SKIP_TARBALL DEBUG
-
 ###
 # generic functionality
 #######################
@@ -83,6 +65,25 @@ error() {
     colorize "$@"
     return 1
 }
+
+if [ -d "$HOME/.source_grabber" ]; then
+    CONF_PATH="$HOME/.source_grabber"
+else
+    #CUR_PATH="${BASH_SOURCE[0]}"
+    CUR_PATH=$(dirname $BASH_SOURCE)
+    CONF_PATH="${CUR_PATH%/*}"/config.d
+fi
+
+# read basic configuration
+if [ ! -f "$CONF_PATH/base.conf" ]; then
+    error "Basic configuration wasn't found."
+    #return 1
+else
+    source "$CONF_PATH/base.conf"
+fi
+
+# clear some session specific variables first
+unset SKIP_UPDATE SKIP_COMMIT SKIP_TARBALL DEBUG
 
 report_on_error() {
     if [ "$DEBUG" ]; then
@@ -497,11 +498,11 @@ update_package() {
         error "    * Cannot identify old tarball"
         return 1
     fi
-    inform "    * Checking if update is needed"
-    if ! need_update; then
-        inform "      * Tarball is up to date, no update needed."
-        return 0
-    fi
+    Winform "    * Checking if update is needed"
+    #if ! need_update; then
+    #    inform "      * Tarball is up to date, no update needed."
+    #    return 0
+    #fi
     inform "      * Tarball needs update."
 
     inform "    * Updating tarball"
@@ -749,18 +750,22 @@ update_project_package() {
         
         inform "    * Checking if update is needed"
         inform "          * Pulling Latest Git Repository"
-        # First need to pull git repo
         
-        
+        # Git Clean needsto be in the right directory
+        cd "$SRC_DIR"
+        if ! report_on_error git clean -d -x -f; then
+            error "      * Cannot clean source"
+           return 1
+        fi
         if ! report_on_error git --git-dir="$SRC_DIR/.git" fetch origin; then
             error "      * Cannot fetch source"
-            return 1
+           return 1
         fi
         if ! report_on_error git --git-dir="$SRC_DIR/.git" reset --hard origin/master ; then
             error "      * Cannot reset source"
             return 1
         fi
-        
+        cd $OLD_PWD
         if ! need_update; then
             inform "      * Tarball is up to date, no update needed."
             return 0
@@ -789,10 +794,10 @@ update_project_package() {
         fi
 
         inform "    * Commiting package"
-        if ! commit_obs_package; then
+        #if ! commit_obs_package; then
             error "      * Cannot commit package"
             return 1
-        fi
+        #fi
     )
 }
 
@@ -865,5 +870,3 @@ update_project() {
     fi
 
 }
-
-update_project_package $1

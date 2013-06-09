@@ -27,35 +27,37 @@ BUILDCOUNT=8
 BUILDNUM=1
 
 
+source source_grabber.sh
+
 # Update Packages in aproxamate order of dependancy
 inform "($BUILDNUM/$BUILDCOUNT) Building EFL"
-./source_grabber.sh $OBS_LOCAL_DIR/efl/
+update_project_package $OBS_LOCAL_DIR/efl/
 BUILDNUM=$(($BUILDNUM+1))
 
 inform "($BUILDNUM/$BUILDCOUNT) Building Evas Generic Loaders"
-./source_grabber.sh $OBS_LOCAL_DIR/evas-generic-loaders/
+update_project_package $OBS_LOCAL_DIR/evas-generic-loaders/
 BUILDNUM=$(($BUILDNUM+1))
 
 inform "($BUILDNUM/$BUILDCOUNT) Building Elementary"
-./source_grabber.sh $OBS_LOCAL_DIR/elementary/
+update_project_package $OBS_LOCAL_DIR/elementary/
 BUILDNUM=$(($BUILDNUM+1))
 
 inform "($BUILDNUM/$BUILDCOUNT) Building Terminology"
-./source_grabber.sh $OBS_LOCAL_DIR/terminology/
+update_project_package $OBS_LOCAL_DIR/terminology/
 BUILDNUM=$(($BUILDNUM+1))
 
 inform "($BUILDNUM/$BUILDCOUNT) Building Enlightenment"
-./source_grabber.sh $OBS_LOCAL_DIR/e17/
+update_project_package $OBS_LOCAL_DIR/e17/
 BUILDNUM=$(($BUILDNUM+1))
 
 inform "($BUILDNUM/$BUILDCOUNT) Building Etrophy"
-./source_grabber.sh $OBS_LOCAL_DIR/etrophy/
+update_project_package $OBS_LOCAL_DIR/etrophy/
 BUILDNUM=$(($BUILDNUM+1))
 
 inform "($BUILDNUM/$BUILDCOUNT) Building Escape from Booty Bay"
-./source_grabber.sh $OBS_LOCAL_DIR/efbb/
+update_project_package $OBS_LOCAL_DIR/efbb/
 BUILDNUM=$(($BUILDNUM+1))
 
 inform "($BUILDNUM/$BUILDCOUNT) Building Clouseau"
-./source_grabber.sh $OBS_LOCAL_DIR/clouseau/
+update_project_package $OBS_LOCAL_DIR/clouseau/
 BUILDNUM=$(($BUILDNUM+1))
