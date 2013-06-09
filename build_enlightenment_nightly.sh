@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#Machine Dependant Vars
-OBS_LOCAL_DIR=/home/simon/src/source_grabber_build/X11\:Enlightenment\:Nightly
+
 
 GREEN="\033[01;32m"
 YELLOW="\033[01;33m"
