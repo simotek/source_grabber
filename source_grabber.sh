@@ -794,10 +794,10 @@ update_project_package() {
         fi
 
         inform "    * Commiting package"
-        #if ! commit_obs_package; then
+        if ! commit_obs_package; then
             error "      * Cannot commit package"
             return 1
-        #fi
+        fi
     )
 }
 
