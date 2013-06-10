@@ -19,14 +19,14 @@
 #   1] source repository configuration file
 #   2] update source repository
 #   3] for every package in the repository
-#	  a] update local copy of OBS package
-#	  b] detect, if there is change since the last packaged state
+#		a] update local copy of OBS package
+#		b] detect, if there is change since the last packaged state
 #		 if not, go to next package
-#	  c] call configure and `make dist-bzip2'
-#	  d] copy result tarball to OBS package repository
-#	  e] update spec file (and note current repository version)
-#	  f] add record to .changes file
-#	  g] commit changes
+#		c] call configure and `make dist-bzip2'
+#		d] copy result tarball to OBS package repository
+#	 	e] update spec file (and note current repository version)
+#		f] add record to .changes file
+#	 	g] commit changes
 #
 # - it should work with directories of project (parameter will be project dir)
 # - I may need to mark spec files which I'd like to take care of
@@ -47,7 +47,7 @@ NONE="\033[00m"
 colorize() {
 	local FIRST="$1"
 	shift
-	echo -e "$SPACES	${COLOR}$FIRST${NONE}$*"
+	echo -e "$SPACES${COLOR}$FIRST${NONE}$*"
 }
 
 inform() {
@@ -117,17 +117,17 @@ is_defined() {
 # TODO: currently unused - use (update) or remove
 pkg_specific() {
 	return 255
-#   if is_defined "${PKG//-/_}_${FUNCNAME[1]}"; then
-#	   inform "	  * package specific ${FUNCNAME[1]} found, calling it"
-#	   "${PKG//-/_}_${FUNCNAME[1]}"
-#	   return $?
-#   else
-#	   return 255
-#   fi
+#	if is_defined "${PKG//-/_}_${FUNCNAME[1]}"; then
+#		inform "	  * package specific ${FUNCNAME[1]} found, calling it"
+#		"${PKG//-/_}_${FUNCNAME[1]}"
+#		return $?
+#	else
+#		return 255
+#	fi
 }
 
 rename_dir_in_tarball() {
-#   $1  new tarball name without suffix
+#	$1  new tarball name without suffix
 
 	if [ "$RESULT_TARBALL" = "$1" ]; then
 		warn "Result tarball and the new one after rename is the same, skipping"
@@ -229,9 +229,9 @@ update_git() {
 			# we already downloaded repository - update only
 			# cd "$SRC_DIR"
 			# FIXME: do I really need to reset?
-			#inform "	* Resetting repository state to the last commit"
+			#inform "   * Resetting repository state to the last commit"
 			#report_on_error git reset --hard
-			inform "	* Pulling origin"
+			inform "    * Pulling origin"
 			report_on_error git --git-dir="$SRC_DIR/.git" pull
 		else
 			# we don't have sources yet - clone repository first
@@ -257,18 +257,18 @@ commit_obs_package() {
 	if [ "$RESULT_TARBALL" != "${OLD_TARBALL##*/}" ]; then
 		rm "$OLD_TARBALL"
 	else
-		inform "	* Result tarball is the same as old tarball"
+		inform "    * Result tarball is the same as old tarball"
 	fi
-	inform "	  * adding/removing tarballs"
+	inform "    * adding/removing tarballs"
 	report_on_error osc ar || warn "	* Error occured during osc addremove"
-	inform "	  * adding record to .changes file"
+	inform "    * adding record to .changes file"
 	report_on_error osc vc -m "$MSG" || warn "	* Error occured during update of .changes file"
 	if [ "$SKIP_COMMIT" ]; then
-		inform "	* Skipping commit to OBS ${SKIP_COMMIT:+(SKIP_COMMIT)}"
+		inform "    * Skipping commit to OBS ${SKIP_COMMIT:+(SKIP_COMMIT)}"
 		cd "$OLD_PWD"
 		return 0
 	fi
-	inform "	  * commiting changes $MSG"
+	inform "        * commiting changes $MSG"
 	osc ci -m "$MSG"
 	# i feel like printing the whole output to give a sence of doing something
 
@@ -282,11 +282,11 @@ commit_obs_package() {
 
 update_obs() {
 	if [ "$SKIP_UPDATE_OBS" -o "$SKIP_UPDATE" ]; then
-		inform "	* Skipping update of OBS package ${SKIP_UPDATE_OBS:+(SKIP_UPDATE_OBS)} ${SKIP_UPDATE:+(SKIP_UPDATE)}"
+		inform "    * Skipping update of OBS package ${SKIP_UPDATE_OBS:+(SKIP_UPDATE_OBS)} ${SKIP_UPDATE:+(SKIP_UPDATE)}"
 		return 0
 	fi
 	local OLD_PWD="$PWD"
-	inform "	* Updating local copy of OBS package"
+	inform "    * Updating local copy of OBS package"
 	if [ -d "$OBS_PRJ_DIR" ]; then
 		if [ -d "${OBS_PRJ_DIR%/}/$OBS_PKG" ]; then
 			cd "${OBS_PRJ_DIR%/}/$OBS_PKG"
@@ -294,7 +294,7 @@ update_obs() {
 				cd "$OLD_PWD"
 				return
 			fi
-			error "	  * Update of OBS package failed. Trying to rename package dir to $OBS_PKG.old and checkout it again."
+			error "      * Update of OBS package failed. Trying to rename package dir to $OBS_PKG.old and checkout it again."
 			cd ..
 			mv "$OBS_PKG" "$OBS_PKG".old
 		fi
@@ -305,7 +305,7 @@ update_obs() {
 		report_on_error osc co "$OBS_PRJ" "$OBS_PKG"
 	fi
 	if [ $? -ne 0 ]; then
-		error "	  * Unable to update OBS package repository"
+		error "      * Unable to update OBS package repository"
 		cd "$OLD_PWD"
 		return 1
 	fi
@@ -343,9 +343,9 @@ find_result_tarball() {
 		1)
 			true ;;
 		0)
-			error "	  * Cannot locate tarball result" ;;
+			error "      * Cannot locate tarball result" ;;
 		*)
-			error "	  * Multiple result tarballs found" ;;
+			error "      * Multiple result tarballs found" ;;
 	esac
 }
 
@@ -368,9 +368,9 @@ make_tarball() {
 	if [ $RES -ne 255 ]; then
 		return "$RES"
 	fi
-	inform '	  * running make dist-bzip2'
+	inform '      * running make dist-bzip2'
 	if ! report_on_error make dist-bzip2; then
-		error "	  * make dist phase failed."
+		error "      * make dist phase failed."
 		return 1
 	fi
 }
@@ -381,13 +381,13 @@ run_configure() {
 	if [ $RES -ne 255 ]; then
 		return "$RES"
 	fi
-	inform "	  * running configure"
+	inform "      * running configure"
 	if ! report_on_error autoreconf -ifv; then
-		error "	  * autoreconf -ifv failed"
+		error "      * autoreconf -ifv failed"
 		return 1
 	fi
 	if ! report_on_error ./configure; then
-		error "	  * ./configure failed"
+		error "      * ./configure failed"
 		return 1
 	fi
 }
@@ -402,7 +402,7 @@ update_tarball() {
 	cd "$SRC_DIR"
 
 	if [ "$SKIP_TARBALL" ]; then
-		inform "	* Skipping tarball creation ${SKIP_TARBALL:+(SKIP_TARBALL)}"
+		inform "    * Skipping tarball creation ${SKIP_TARBALL:+(SKIP_TARBALL)}"
 	else
 #	   if find_result_tarball &> /dev/null; then
 #		   error "found tarball matching my rules before making one"
@@ -410,9 +410,9 @@ update_tarball() {
 #	   fi
 		# if there is specific action to be made, do it (i.g. autoreconf...)
 		if is_defined pre_configure_hook; then
-			inform "	  * pre_configure_hook defined, calling it"
+			inform "      * pre_configure_hook defined, calling it"
 			if ! report_on_error pre_configure_hook; then
-				error "		* pre_configure_hook failed"
+				error "        * pre_configure_hook failed"
 				cd "$OLD_PWD"
 				return 1
 			fi
@@ -423,12 +423,12 @@ update_tarball() {
 			return 1
 		fi
 		if is_defined post_configure_hook; then
-			inform "	  * post_configure_hook defined, calling it"
+			inform "      * post_configure_hook defined, calling it"
 		fi
 
-		inform "	* making tarball"
+		inform "    * making tarball"
 		if ! make_tarball; then
-			error "	  * making tarball failed"
+			error "      * making tarball failed"
 			cd "$OLD_PWD"
 			return 2
 		fi
@@ -438,8 +438,8 @@ update_tarball() {
 		cd "$OLD_PWD"
 		return 3
 	fi
-	inform "	* result tarball: " "$RESULT_TARBALL"
-	inform "	* copying tarball to OBS package repository"
+	inform "    * result tarball: " "$RESULT_TARBALL"
+	inform "    * copying tarball to OBS package repository"
 	mv "$SRC_DIR/$RESULT_TARBALL" "${SPEC%/*}"
 	cd "$OLD_PWD"
 }
@@ -448,22 +448,22 @@ update_tarball() {
 find_old_tarball_from_name() {
 	local OLD_TARBALLS="$(ls "$OBS_PRJ_DIR/$OBS_PKG/$PKG-"*.tar.{bz2,gz} 2> /dev/null)"
 	if [ "$(wc -l <<< "$OLD_TARBALLS")" -ne 1 ]; then
-		error "	* There is more than one tarball matching $PKG-*.tar.{bz2,gz} in OBS package directory"
+		error "    * There is more than one tarball matching $PKG-*.tar.{bz2,gz} in OBS package directory"
 		return 1
 	fi
 	OLD_TARBALL="$OLD_TARBALLS"
-	inform "	 * Found old tarball based on name"
+	inform "     * Found old tarball based on name"
 	return 0
 }
 
 find_some_old_tarball() {
 	local OLD_TARBALLS="$(ls "$OBS_PRJ_DIR/$OBS_PKG/"*.tar.{bz2,gz} 2> /dev/null)"
 	if [ "$(wc -l <<< "$OLD_TARBALLS")" -ne 1 ]; then
-		error "	* There is more than one tarball in OBS package directory"
+		error "    * There is more than one tarball in OBS package directory"
 		return 1
 	fi
 	OLD_TARBALL="$OLD_TARBALLS"
-	inform "	 * There is only one tarball"
+	inform "     * There is only one tarball"
 	return 0
 }
 
@@ -480,7 +480,7 @@ find_old_tarball() {
 }
 
 update_package() {
-	inform "  * Updating package: " "$1"
+	inform "    * Updating package: " "$1"
 	# init OBS_PKG and SRC_REL_DIR to values specified in repo configuration or fallback to default
 #   for i in OBS_PKG SRC_REL_DIR; do
 #	   if eval [ "\"\$$1_$i\"" ]; then
@@ -491,42 +491,42 @@ update_package() {
 #   done
 
 	if ! update_obs; then
-		error "	* Cannot obtain OBS package repository"
+		error "    * Cannot obtain OBS package repository"
 		return 1
 	fi
 	if ! find_old_tarball; then
-		error "	* Cannot identify old tarball"
+		error "    * Cannot identify old tarball"
 		return 1
 	fi
-	Winform "	* Checking if update is needed"
+	Winform "    * Checking if update is needed"
 	#if ! need_update; then
 	#	inform "	  * Tarball is up to date, no update needed."
 	#	return 0
 	#fi
-	inform "	  * Tarball needs update."
+	inform "      * Tarball needs update."
 
-	inform "	* Updating tarball"
+	inform "    * Updating tarball"
 	if ! update_tarball; then
-		error "	  * Tarball update failed, aborting this package"
+		error "      * Tarball update failed, aborting this package"
 		return 1
 	fi
 
-	inform "	* Updating spec file"
+	inform "    * Updating spec file"
 	new_version
 	#if ! new_version; then
 	#	error "	  * Cannot recognize new version"
 	#	return 1
 	#fi
 
-	inform "	  * new version: " "$NEW_VERSION"
+	inform "      * new version: " "$NEW_VERSION"
 	if ! update_spec; then
-		error "	  * Cannot update spec file"
+		error "      * Cannot update spec file"
 		return 1
 	fi
 
-	inform "	* Commiting package"
+	inform "    * Commiting package"
 	if ! commit_obs_package; then
-		error "	  * Cannot commit package"
+		error "      * Cannot commit package"
 		return 1
 	fi
 }
@@ -548,7 +548,7 @@ update_packages_in_repository() {
 
 	inform "  * Refresh source code repository"
 	if [ "$SKIP_UPDATE" ]; then
-		   inform "	* skipped"
+		inform "    * skipped"
 	elif ! update_source_repo; then
 		warn "Update repository couldn't be updated, skipping tarball creation"
 		return 1
@@ -681,7 +681,7 @@ read_spec() {
 	if [ -z "$REVISION" ]; then
 		warn "Cannot parse from specfile: " "'${REVISION:-REVISION}'"
 		warn "Continuing anyway..."
-#	   return 1
+#		return 1
 	fi
 	find_src_dir || return 1
 	if [ -z "$REPO_TYPE" ]; then
@@ -702,9 +702,9 @@ find_src_dir() {
 		fi
 	done
 	if [ -z "$SRC_DIR" ]; then
-		error "	* Local repository for '${1:-$SRC_URL}' is not defined, please, specify in local configuration"
+		error "    * Local repository for '${1:-$SRC_URL}' is not defined, please, specify in local configuration"
 	else
-		inform "	* Local repository: " "$SRC_DIR"
+		inform "    * Local repository: " "$SRC_DIR"
 	fi
 }
 
@@ -748,8 +748,8 @@ update_project_package() {
 
 		read_spec || exit 1
 		
-		inform "	* Checking if update is needed"
-		inform "		  * Pulling Latest Git Repository"
+		inform "    * Checking if update is needed"
+		inform "          * Pulling Latest Git Repository"
 		
 		# Git Clean needsto be in the right directory
 		cd "$SRC_DIR"
@@ -767,18 +767,18 @@ update_project_package() {
 		fi
 		cd $OLD_PWD
 		if ! need_update; then
-			inform "	  * Tarball is up to date, no update needed."
+			inform "      * Tarball is up to date, no update needed."
 			return 0
 		fi
-		inform "	  * Tarball needs update."
+		inform "      * Tarball needs update."
 
-		inform "	* Updating tarball"
+		inform "     * Updating tarball"
 		if ! update_tarball; then
 			error "	  * Tarball update failed, aborting this package"
 			return 1
 		fi
 
-		inform "	* Updating spec file"
+		inform "    * Updating spec file"
 		if ! new_version; then
 			error "	  * Cannot recognize new version"
 			return 1
@@ -787,13 +787,13 @@ update_project_package() {
 			inform "Converting tarball from '$RESULT_TARBALL' to '$RENAME_TO'"
 			rename_dir_in_tarball "$RENAME_TO"
 		fi
-		inform "	  * new version: " "$NEW_VERSION"
+		inform "      * new version: " "$NEW_VERSION"
 		if ! update_spec; then
 			error "	  * Cannot update spec file"
 			return 1
 		fi
 
-		inform "	* Commiting package"
+		inform "    * Commiting package"
 		if ! commit_obs_package; then
 			error "	  * Cannot commit package"
 			return 1
@@ -823,7 +823,7 @@ update_vcs() {
 }
 
 update_project() {
-#   $1  project directory
+#	$1	project directory
 	OBS_PRJ_DIR="$1"
 	# if it is not absolute path, make it so (well, almost)
 	if [ "${1:0:1}" != '/' ]; then
