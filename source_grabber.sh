@@ -24,9 +24,9 @@
 #		 if not, go to next package
 #		c] call configure and `make dist-bzip2'
 #		d] copy result tarball to OBS package repository
-#	 	e] update spec file (and note current repository version)
+#		e] update spec file (and note current repository version)
 #		f] add record to .changes file
-#	 	g] commit changes
+#		g] commit changes
 #
 # - it should work with directories of project (parameter will be project dir)
 # - I may need to mark spec files which I'd like to take care of
@@ -118,7 +118,7 @@ is_defined() {
 pkg_specific() {
 	return 255
 #	if is_defined "${PKG//-/_}_${FUNCNAME[1]}"; then
-#		inform "	  * package specific ${FUNCNAME[1]} found, calling it"
+#		inform "      * package specific ${FUNCNAME[1]} found, calling it"
 #		"${PKG//-/_}_${FUNCNAME[1]}"
 #		return $?
 #	else
@@ -229,7 +229,7 @@ update_git() {
 			# we already downloaded repository - update only
 			# cd "$SRC_DIR"
 			# FIXME: do I really need to reset?
-			#inform "   * Resetting repository state to the last commit"
+			#inform "    * Resetting repository state to the last commit"
 			#report_on_error git reset --hard
 			inform "    * Pulling origin"
 			report_on_error git --git-dir="$SRC_DIR/.git" pull
@@ -259,16 +259,16 @@ commit_obs_package() {
 	else
 		inform "    * Result tarball is the same as old tarball"
 	fi
-	inform "    * adding/removing tarballs"
+	inform "      * adding/removing tarballs"
 	report_on_error osc ar || warn "	* Error occured during osc addremove"
-	inform "    * adding record to .changes file"
-	report_on_error osc vc -m "$MSG" || warn "	* Error occured during update of .changes file"
+	inform "      * adding record to .changes file"
+	report_on_error osc vc -m "$MSG" || warn "    * Error occured during update of .changes file"
 	if [ "$SKIP_COMMIT" ]; then
 		inform "    * Skipping commit to OBS ${SKIP_COMMIT:+(SKIP_COMMIT)}"
 		cd "$OLD_PWD"
 		return 0
 	fi
-	inform "        * commiting changes $MSG"
+	inform "      * commiting changes $MSG"
 	osc ci -m "$MSG"
 	# i feel like printing the whole output to give a sence of doing something
 
@@ -327,7 +327,6 @@ new_version() {
 	NEW_VERSION="${NEW_VERSION%.tar.gz}"
 	# remove package name
 	NEW_VERSION="${NEW_VERSION##$PKG-}"
-
 }
 
 find_result_tarball() {
@@ -337,7 +336,6 @@ find_result_tarball() {
 		return "$RES"
 	fi
 	RESULT_TARBALL="$(ls "${SRC_REL_DIR##*/}"*.tar.bz2 2>/dev/null)"
-
 	local NUM="$(wc -l <<< "$RESULT_TARBALL")"
 	case $NUM in
 		1)
@@ -404,10 +402,10 @@ update_tarball() {
 	if [ "$SKIP_TARBALL" ]; then
 		inform "    * Skipping tarball creation ${SKIP_TARBALL:+(SKIP_TARBALL)}"
 	else
-#	   if find_result_tarball &> /dev/null; then
-#		   error "found tarball matching my rules before making one"
-#		   return 3
-#	   fi
+#    if find_result_tarball &> /dev/null; then
+#        error "found tarball matching my rules before making one"
+#        return 3
+#    fi
 		# if there is specific action to be made, do it (i.g. autoreconf...)
 		if is_defined pre_configure_hook; then
 			inform "      * pre_configure_hook defined, calling it"
@@ -480,15 +478,15 @@ find_old_tarball() {
 }
 
 update_package() {
-	inform "    * Updating package: " "$1"
+	inform "  * Updating package: " "$1"
 	# init OBS_PKG and SRC_REL_DIR to values specified in repo configuration or fallback to default
-#   for i in OBS_PKG SRC_REL_DIR; do
-#	   if eval [ "\"\$$1_$i\"" ]; then
-#		   eval "$i"="\$$1_$i"
-#	   else
-#		   eval "$i"="'$1'"
-#	   fi
-#   done
+#	for i in OBS_PKG SRC_REL_DIR; do
+#		if eval [ "\"\$$1_$i\"" ]; then
+#			eval "$i"="\$$1_$i"
+#		else
+#			eval "$i"="'$1'"
+#		fi
+#	done
 
 	if ! update_obs; then
 		error "    * Cannot obtain OBS package repository"
@@ -498,11 +496,11 @@ update_package() {
 		error "    * Cannot identify old tarball"
 		return 1
 	fi
-	Winform "    * Checking if update is needed"
-	#if ! need_update; then
-	#	inform "	  * Tarball is up to date, no update needed."
-	#	return 0
-	#fi
+	inform "    * Checking if update is needed"
+	if ! need_update; then
+		inform "	  * Tarball is up to date, no update needed."
+		return 0
+	fi
 	inform "      * Tarball needs update."
 
 	inform "    * Updating tarball"
@@ -513,10 +511,10 @@ update_package() {
 
 	inform "    * Updating spec file"
 	new_version
-	#if ! new_version; then
-	#	error "	  * Cannot recognize new version"
-	#	return 1
-	#fi
+	if ! new_version; then
+		error "	  * Cannot recognize new version"
+		return 1
+	fi
 
 	inform "      * new version: " "$NEW_VERSION"
 	if ! update_spec; then
@@ -772,15 +770,15 @@ update_project_package() {
 		fi
 		inform "      * Tarball needs update."
 
-		inform "     * Updating tarball"
+		inform "    * Updating tarball"
 		if ! update_tarball; then
-			error "	  * Tarball update failed, aborting this package"
+			error "      * Tarball update failed, aborting this package"
 			return 1
 		fi
 
 		inform "    * Updating spec file"
 		if ! new_version; then
-			error "	  * Cannot recognize new version"
+			error "      * Cannot recognize new version"
 			return 1
 		fi
 		if [ "$RENAME_TO" ]; then
@@ -789,13 +787,13 @@ update_project_package() {
 		fi
 		inform "      * new version: " "$NEW_VERSION"
 		if ! update_spec; then
-			error "	  * Cannot update spec file"
+			error "      * Cannot update spec file"
 			return 1
 		fi
 
 		inform "    * Commiting package"
 		if ! commit_obs_package; then
-			error "	  * Cannot commit package"
+			error "      * Cannot commit package"
 			return 1
 		fi
 	)
