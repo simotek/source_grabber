@@ -12,14 +12,14 @@ BOLD="\033[1m"
 NORMAL="\033[0m"
 
 colorize() {
-    local FIRST="$1"
-    shift
-    echo -e "$SPACES${BOLD}${COLOR}$FIRST${NONE}${NORMAL}$*"
+	local FIRST="$1"
+	shift
+	echo -e "$SPACES${BOLD}${COLOR}$FIRST${NONE}${NORMAL}$*"
 }
 
 inform() {
-    local COLOR="$BLUE"
-    colorize "$@"
+	local COLOR="$BLUE"
+	colorize "$@"
 }
 
 BUILDCOUNT=8
