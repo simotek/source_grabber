@@ -378,23 +378,25 @@ make_tarball_manual() {
 	PRO_NAME=${TMP1##*/}
 	GIT_VER=$(git log --format=oneline | wc -l)
 	# PRE_CONFIG_VERSION should be in the form 1.7.1. with a trailing dot to take account of cases where its not used
-	inform "    * creating $PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER.tar.bz2"
+	# inform "    * creating $PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER.tar.bz2"
 
 	# Files need to be added to a directory with the same name for obs
 	MAN_TAR_FILE_NAME=$PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER
 	MAN_TAR_TMP_DIR=/tmp/source_grabber/$MAN_TAR_FILE_NAME
 	# Copy all files to a directory with the file name in /tmp
-	rm -r /tmp/source_grabber/*
-	mkdir /tmp/source_grabber/$MAN_TAR_TMP_DIR
-	cp * /tmp/source_grabber/$MAN_TAR_TMP_DIR
+	mkdir -p $MAN_TAR_TMP_DIR
+	cp -r * $MAN_TAR_TMP_DIR
 	
-	warn "tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_TMP_DIR"
-	
-	if ! report_on_error tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_TMP_DIR; then
+	# warn "tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_TMP_DIR"
+	CURRENT_SRC_DIR=$PWD
+	cd /tmp/source_grabber
+	if ! report_on_error tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_FILE_NAME; then
 		error "        * Manual Tar failed"
 		cd "$OLD_PWD"
 		return 4
 	fi
+	cp "$MAN_TAR_FILE_NAME.tar.bz2" $CURRENT_SRC_DIR/
+	rm -r /tmp/source_grabber/*
 	RESULT_TARBALL="$PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER.tar.bz2"
 	cd "$OLD_PWD"
 }
@@ -799,10 +801,10 @@ update_project_package() {
 			return 1
 		fi
 		cd $OLD_PWD
-		#if ! need_update; then
-		#	inform "      * Tarball is up to date, no update needed."
-		#	return 0
-		#fi
+		if ! need_update; then
+			inform "      * Tarball is up to date, no update needed."
+			return 0
+		fi
 		inform "      * Tarball needs update."
 
 		inform "    * Updating tarball"
