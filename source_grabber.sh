@@ -373,6 +373,32 @@ make_tarball() {
 	fi
 }
 
+make_tarball_manual() {
+	TMP1=${SPEC%%.*}
+	PRO_NAME=${TMP1##*/}
+	GIT_VER=$(git log --format=oneline | wc -l)
+	# PRE_CONFIG_VERSION should be in the form 1.7.1. with a trailing dot to take account of cases where its not used
+	inform "    * creating $PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER.tar.bz2"
+
+	# Files need to be added to a directory with the same name for obs
+	MAN_TAR_FILE_NAME=$PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER
+	MAN_TAR_TMP_DIR=/tmp/source_grabber/$MAN_TAR_FILE_NAME
+	# Copy all files to a directory with the file name in /tmp
+	rm -r /tmp/source_grabber/*
+	mkdir /tmp/source_grabber/$MAN_TAR_TMP_DIR
+	cp * /tmp/source_grabber/$MAN_TAR_TMP_DIR
+	
+	warn "tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_TMP_DIR"
+	
+	if ! report_on_error tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_TMP_DIR; then
+		error "        * Manual Tar failed"
+		cd "$OLD_PWD"
+		return 4
+	fi
+	RESULT_TARBALL="$PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER.tar.bz2"
+	cd "$OLD_PWD"
+}
+
 run_configure() {
 	pkg_specific
 	local RES=$?
@@ -398,7 +424,6 @@ update_tarball() {
 #
 	local OLD_PWD="$PWD"
 	cd "$SRC_DIR"
-
 	if [ "$SKIP_TARBALL" ]; then
 		inform "    * Skipping tarball creation ${SKIP_TARBALL:+(SKIP_TARBALL)}"
 	else
@@ -415,32 +440,41 @@ update_tarball() {
 				return 1
 			fi
 		fi
+		echo "Checking for configure.ac in $PWD"
+		# Check to see if its a autofoo project
+		if [ -f "$SRC_DIR/configure.ac" ]; then
+			if ! run_configure; then
+				cd "$OLD_PWD"
+				return 1
+			fi
+			if is_defined post_configure_hook; then
+				inform "      * post_configure_hook defined, calling it"
+			fi
 
-		if ! run_configure; then
-			cd "$OLD_PWD"
-			return 1
-		fi
-		if is_defined post_configure_hook; then
-			inform "      * post_configure_hook defined, calling it"
-		fi
+			inform "    * making tarball"
+			if ! make_tarball; then
+				error "      * making tarball failed"
+				cd "$OLD_PWD"
+			fi
 
-		inform "    * making tarball"
-		if ! make_tarball; then
-			error "      * making tarball failed"
-			cd "$OLD_PWD"
-			return 2
+			# find_result_tarball should set RESULT_TARBALL
+			if ! find_result_tarball; then
+				cd "$OLD_PWD"
+				return 3
+			fi
+		else
+			warn "    * Build system not detected manually creating tarball"
+			make_tarball_manual
 		fi
 	fi
-	# find_result_tarball should set RESULT_TARBALL
-	if ! find_result_tarball; then
-		cd "$OLD_PWD"
-		return 3
-	fi
+	
 	inform "    * result tarball: " "$RESULT_TARBALL"
 	inform "    * copying tarball to OBS package repository"
 	mv "$SRC_DIR/$RESULT_TARBALL" "${SPEC%/*}"
 	cd "$OLD_PWD"
 }
+
+
 
 
 find_old_tarball_from_name() {
@@ -522,11 +556,11 @@ update_package() {
 		return 1
 	fi
 
-	inform "    * Commiting package"
-	if ! commit_obs_package; then
-		error "      * Cannot commit package"
-		return 1
-	fi
+	#inform "    * Commiting package"
+	#if ! commit_obs_package; then
+	#	error "      * Cannot commit package"
+	#	return 1
+	#fi
 }
 
 update_packages_in_repository() {
@@ -585,6 +619,7 @@ dependency_hack() {
 	# put changes back, so original file gets to result tarball
 	cp configure.ac.backup configure.ac
 }
+
 
 detect_repo_type() {
 	if [[ $SRC_URL =~ ^git:// ]] || [[ $SRC_URL =~ \.git$ ]]; then
@@ -753,24 +788,25 @@ update_project_package() {
 		cd "$SRC_DIR"
 		if ! report_on_error git clean -d -x -f; then
 			error "	  * Cannot clean source"
-		   return 1
+			return 1
 		fi
 		if ! report_on_error git --git-dir="$SRC_DIR/.git" fetch origin; then
 			error "	  * Cannot fetch source"
-		   return 1
+			return 1
 		fi
 		if ! report_on_error git --git-dir="$SRC_DIR/.git" reset --hard origin/master ; then
 			error "	  * Cannot reset source"
 			return 1
 		fi
 		cd $OLD_PWD
-		if ! need_update; then
-			inform "      * Tarball is up to date, no update needed."
-			return 0
-		fi
+		#if ! need_update; then
+		#	inform "      * Tarball is up to date, no update needed."
+		#	return 0
+		#fi
 		inform "      * Tarball needs update."
 
 		inform "    * Updating tarball"
+
 		if ! update_tarball; then
 			error "      * Tarball update failed, aborting this package"
 			return 1
