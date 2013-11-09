@@ -22,7 +22,7 @@ heading() {
 	colorize "$@"
 }
 
-BUILDCOUNT=21
+BUILDCOUNT=22
 BUILDNUM=1
 
 
@@ -44,7 +44,6 @@ BUILDNUM=$(($BUILDNUM+1))
 heading "($BUILDNUM/$BUILDCOUNT) Building Python-EFL"
 update_project_package $OBS_LOCAL_DIR/python-efl/
 BUILDNUM=$(($BUILDNUM+1))
-
 
 heading "($BUILDNUM/$BUILDCOUNT) Building Terminology"
 update_project_package $OBS_LOCAL_DIR/terminology/
@@ -88,6 +87,10 @@ BUILDNUM=$(($BUILDNUM+1))
 
 heading "($BUILDNUM/$BUILDCOUNT) Building E Theme 23oz"
 update_project_package $OBS_LOCAL_DIR/e_theme-23oz/
+BUILDNUM=$(($BUILDNUM+1))
+
+heading "($BUILDNUM/$BUILDCOUNT) Building EConnman"
+update_project_package $OBS_LOCAL_DIR/econnman/
 BUILDNUM=$(($BUILDNUM+1))
 
 heading "($BUILDNUM/$BUILDCOUNT) Building Etrophy"

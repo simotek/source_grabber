@@ -376,7 +376,6 @@ make_tarball() {
 make_tarball_manual() {
 	TMP1=${SPEC%%.*}
 	PRO_NAME=${TMP1##*/}
-	GIT_VER=$(git log --format=oneline | wc -l)
 	# PRE_CONFIG_VERSION should be in the form 1.7.1. with a trailing dot to take account of cases where its not used
 	# inform "    * creating $PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER.tar.bz2"
 
@@ -442,7 +441,6 @@ update_tarball() {
 				return 1
 			fi
 		fi
-		echo "Checking for configure.ac in $PWD"
 		# Check to see if its a autofoo project
 		if [ -f "$SRC_DIR/configure.ac" ]; then
 			if ! run_configure; then
@@ -672,14 +670,20 @@ new_version() {
 		if [ "$WITHOUT_END" != "${WITHOUT_DASH}" ]; then
 			# so if there is, use only left part
 			# but also rename tarball and contained directory
-			RENAME_TO="$NAME_BEGIN${WITHOUT_DASH}$NAME_END"
-			RENAMED_VERSION="$WITHOUT_DASH"
+			
+			#also append git vesion
+			
+			RENAME_TO="$NAME_BEGIN${WITHOUT_DASH}.$GIT_VER$NAME_END"
+			RENAMED_VERSION="$WITHOUT_DASH.$GIT_VER"
 			inform "Version contains '-', directory in tarball and the filename will be altered to: " "$RENAME_TO"
 		else
 			unset RENAME_TO RENAMED_VERSION
 		fi
 	fi
 	NEW_VERSION="${WITHOUT_END}"
+	
+	# append git version to keep incrementing package number
+    
 }
 
 locate_spec() {
@@ -800,6 +804,8 @@ update_project_package() {
 			error "	  * Cannot reset source"
 			return 1
 		fi
+		# Gt the git version here incase we need it
+		GIT_VER=$(git log --format=oneline | wc -l)
 		cd $OLD_PWD
 		if ! need_update; then
 			inform "      * Tarball is up to date, no update needed."
