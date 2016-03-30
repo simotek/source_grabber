@@ -31,7 +31,7 @@
 # - it should work with directories of project (parameter will be project dir)
 # - I may need to mark spec files which I'd like to take care of
 # - how to update VCS repository only once for whole project? how to remember such
-# - 
+# -
 #
 ################################################################################
 
@@ -92,7 +92,7 @@ report_on_error() {
 	fi
 	OUTPUT="$("$@" 2>&1)"
 	if [ $? -ne 0 ]; then
-		error "Failed command: " 
+		error "Failed command: "
 		for i in "$@"; do
 			(
 				set -- $i
@@ -137,9 +137,9 @@ rename_dir_in_tarball() {
 	(
 		set -e
 		cd "$TMPDIR"
-		tar xjf "${SPEC%/*}/$RESULT_TARBALL" || error "Cannot untar result tarball"
-		mv "${RESULT_TARBALL%.tar.bz2}" "${1%.tar.bz2}" || error "Cannot rename: " "'${RESULT_TARBALL%.tar.bz2}' --> '$1'"
-		tar cjf "${SPEC%/*}/$1" "${1%.tar.bz2}" || error "Cannot tar: " "'${1%.tar.bz2}' into '$SRC_DIR/$1'"
+		tar xjf "${SPEC%/*}/$RESULT_TARBALL" || tar xJf "${SPEC%/*}/$RESULT_TARBALL" || error "Cannot untar result tarball"
+		mv ${RESULT_TARBALL%.tar.xz}" "${1%.tar.xz} || mv "${RESULT_TARBALL%.tar.{bz2}" "${1%.tar.bz2}" || error "Cannot rename: " "'${RESULT_TARBALL%.tar.bz2}' --> '$1'"
+		tar cJf "${SPEC%/*}/$1" "${1%.tar.xz}" || tar cjf "${SPEC%/*}/$1" "${1%.tar.bz2}" || error "Cannot tar: " "'${1%.tar.bz2}' into '$SRC_DIR/$1'"
 		rm "${SPEC%/*}/$RESULT_TARBALL" || error "Cannot remove old result tarball"
 	)
 	if [ $? -ne 0 ]; then
@@ -325,6 +325,7 @@ new_version() {
 	# remove tarball suffix
 	NEW_VERSION="${RESULT_TARBALL%.tar.bz2}"
 	NEW_VERSION="${NEW_VERSION%.tar.gz}"
+	NEW_VERSION="${NEW_VERSION%.tar.xz}"
 	# remove package name
 	NEW_VERSION="${NEW_VERSION##$PKG-}"
 }
@@ -335,7 +336,7 @@ find_result_tarball() {
 	if [ $RES -ne 255 ]; then
 		return "$RES"
 	fi
-	RESULT_TARBALL="$(ls "${SRC_REL_DIR##*/}"*.tar.bz2 2>/dev/null)"
+	RESULT_TARBALL="$(ls "${SRC_REL_DIR##*/}"*.tar.{bz2,xz} 2>/dev/null)"
 	local NUM="$(wc -l <<< "$RESULT_TARBALL")"
 	case $NUM in
 		1)
@@ -366,10 +367,13 @@ make_tarball() {
 	if [ $RES -ne 255 ]; then
 		return "$RES"
 	fi
-	inform '      * running make dist-bzip2'
-	if ! report_on_error make dist-bzip2; then
-		error "      * make dist phase failed."
-		return 1
+	inform '      * running make dist-xz'
+	if ! report_on_error make dist-xz; then
+		warn "      * make dist phase failed. Trying make dist-bzip2"
+		if ! report_on_error make dist-bzip2; then
+		  error "      * make dist phase failed."
+		  return 1
+		fi
 	fi
 }
 
@@ -385,8 +389,8 @@ make_tarball_manual() {
 	# Copy all files to a directory with the file name in /tmp
 	mkdir -p $MAN_TAR_TMP_DIR
 	cp -r * $MAN_TAR_TMP_DIR
-	
-	# warn "tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_TMP_DIR"
+
+	# warn "tar -cvJf "$MAN_TAR_FILE_NAME.tar.xz" $MAN_TAR_TMP_DIR"
 	CURRENT_SRC_DIR=$PWD
 	cd /tmp/source_grabber
 	if ! report_on_error tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_FILE_NAME; then
@@ -400,6 +404,19 @@ make_tarball_manual() {
 	cd "$OLD_PWD"
 }
 
+remove_configure_version_check() {
+	# I don't want to follow version dependencies just for making tarball
+	cp "configure.ac" "configure.ac.tmp"
+	sed 's@ \(>=\?\) [0-9.]*@ \1 0.0.0@g' configure.ac.tmp > configure.ac
+	# now do some e17 specific preparations
+	#NOCONFIGURE=yes ./autogen.sh
+}
+
+restore_configure() {
+	# now restore original configure.ac for `make dist'
+	cp configure.ac.tmp configure.ac
+}
+
 run_configure() {
 	pkg_specific
 	local RES=$?
@@ -407,6 +424,7 @@ run_configure() {
 		return "$RES"
 	fi
 	inform "      * running configure"
+	remove_configure_version_check
 	if ! report_on_error autoreconf -ifv; then
 		error "      * autoreconf -ifv failed"
 		return 1
@@ -433,14 +451,14 @@ update_tarball() {
 #        return 3
 #    fi
 		# if there is specific action to be made, do it (i.g. autoreconf...)
-		if is_defined pre_configure_hook; then
-			inform "      * pre_configure_hook defined, calling it"
-			if ! report_on_error pre_configure_hook; then
-				error "        * pre_configure_hook failed"
-				cd "$OLD_PWD"
-				return 1
-			fi
-		fi
+# # 		if is_defined pre_configure_hook; then
+# # 			inform "      * pre_configure_hook defined, calling it"
+# # 			if ! report_on_error pre_configure_hook; then
+# # 				error "        * pre_configure_hook failed"
+# # 				cd "$OLD_PWD"
+# # 				return 1
+# # 			fi
+# # 		fi
 		# Check to see if its a autofoo project
 		if [ -f "$SRC_DIR/configure.ac" ]; then
 			if ! run_configure; then
@@ -467,7 +485,7 @@ update_tarball() {
 			make_tarball_manual
 		fi
 	fi
-	
+
 	inform "    * result tarball: " "$RESULT_TARBALL"
 	inform "    * copying tarball to OBS package repository"
 	mv "$SRC_DIR/$RESULT_TARBALL" "${SPEC%/*}"
@@ -478,9 +496,9 @@ update_tarball() {
 
 
 find_old_tarball_from_name() {
-	local OLD_TARBALLS="$(ls "$OBS_PRJ_DIR/$OBS_PKG/$PKG-"*.tar.{bz2,gz} 2> /dev/null)"
+	local OLD_TARBALLS="$(ls "$OBS_PRJ_DIR/$OBS_PKG/$PKG-"*.tar.{bz2,gz,xz} 2> /dev/null)"
 	if [ "$(wc -l <<< "$OLD_TARBALLS")" -ne 1 ]; then
-		error "    * There is more than one tarball matching $PKG-*.tar.{bz2,gz} in OBS package directory"
+		error "    * There is more than one tarball matching $PKG-*.tar.{bz2,gz,xz} in OBS package directory"
 		return 1
 	fi
 	OLD_TARBALL="$OLD_TARBALLS"
@@ -489,7 +507,7 @@ find_old_tarball_from_name() {
 }
 
 find_some_old_tarball() {
-	local OLD_TARBALLS="$(ls "$OBS_PRJ_DIR/$OBS_PKG/"*.tar.{bz2,gz} 2> /dev/null)"
+	local OLD_TARBALLS="$(ls "$OBS_PRJ_DIR/$OBS_PKG/"*.tar.{bz2,gz,xz} 2> /dev/null)"
 	if [ "$(wc -l <<< "$OLD_TARBALLS")" -ne 1 ]; then
 		error "    * There is more than one tarball in OBS package directory"
 		return 1
@@ -648,6 +666,7 @@ new_version() {
 		error "Cannot find old find string before version and after version in old source file"
 		return 1
 	fi
+  NAME_END=".tar.xz"
 
 	# 2] cut begin (prefix) and end (suffix) if possible
 	local WITHOUT_BEGIN="${RESULT_TARBALL#$NAME_BEGIN}"
@@ -670,9 +689,9 @@ new_version() {
 		if [ "$WITHOUT_END" != "${WITHOUT_DASH}" ]; then
 			# so if there is, use only left part
 			# but also rename tarball and contained directory
-			
+
 			#also append git vesion
-			
+
 			RENAME_TO="$NAME_BEGIN${WITHOUT_DASH}.$GIT_VER$NAME_END"
 			RENAMED_VERSION="$WITHOUT_DASH.$GIT_VER"
 			inform "Version contains '-', directory in tarball and the filename will be altered to: " "$RENAME_TO"
@@ -681,9 +700,9 @@ new_version() {
 		fi
 	fi
 	NEW_VERSION="${WITHOUT_END}"
-	
+
 	# append git version to keep incrementing package number
-    
+
 }
 
 locate_spec() {
@@ -712,7 +731,7 @@ read_spec() {
 	OLD_TARBALL="$(rpmspec -D "%_sourcedir ${SPEC%/*}" -P "$SPEC" | \
 		sed -n 's/Source:[[:blank:]]*\([^[:blank:]]\+\)[[:blank:]]*$/\1/p')"
 	if [ ! -f "${SPEC%/*}/$OLD_TARBALL" ]; then
-		error "Cannot identify old tarball"
+		error "Cannot identify old tarball ${SPEC%/*}/$OLD_TARBALL"
 		return 1
 	fi
 	# read hook functions, SRC_REL_DIR, REVISION
@@ -786,12 +805,15 @@ update_project_package() {
 		cd $OLD_PWD
 
 		read_spec || exit 1
-		
+
 		inform "    * Checking if update is needed"
-		inform "          * Pulling Latest Git Repository"
-		
+		inform "          * Pulling Latest Git Repository at $PWD"
+
+        	cd "$SRC_DIR" || exit 1
+
+                git pull
+
 		# Git Clean needsto be in the right directory
-		cd "$SRC_DIR"
 		if ! report_on_error git clean -d -x -f; then
 			error "	  * Cannot clean source"
 			return 1
@@ -807,10 +829,10 @@ update_project_package() {
 		# Gt the git version here incase we need it
 		GIT_VER=$(git log --format=oneline | wc -l)
 		cd $OLD_PWD
-		if ! need_update; then
-			inform "      * Tarball is up to date, no update needed."
-			return 0
-		fi
+		# if ! need_update; then
+		#	inform "      * Tarball is up to date, no update needed."
+    #        return 0;
+		# fi
 		inform "      * Tarball needs update."
 
 		inform "    * Updating tarball"
