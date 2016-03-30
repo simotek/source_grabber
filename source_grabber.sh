@@ -393,14 +393,14 @@ make_tarball_manual() {
 	# warn "tar -cvJf "$MAN_TAR_FILE_NAME.tar.xz" $MAN_TAR_TMP_DIR"
 	CURRENT_SRC_DIR=$PWD
 	cd /tmp/source_grabber
-	if ! report_on_error tar -cvjf "$MAN_TAR_FILE_NAME.tar.bz2" $MAN_TAR_FILE_NAME; then
+	if ! report_on_error tar -cvJf "$MAN_TAR_FILE_NAME.tar.xz" $MAN_TAR_FILE_NAME; then
 		error "        * Manual Tar failed"
 		cd "$OLD_PWD"
 		return 4
 	fi
-	cp "$MAN_TAR_FILE_NAME.tar.bz2" $CURRENT_SRC_DIR/
+	cp "$MAN_TAR_FILE_NAME.tar.xz" $CURRENT_SRC_DIR/
 	rm -r /tmp/source_grabber/*
-	RESULT_TARBALL="$PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER.tar.bz2"
+	RESULT_TARBALL="$PRO_NAME-$PRE_CONFIG_VERSION$GIT_VER.tar.xz"
 	cd "$OLD_PWD"
 }
 
